@@ -1,0 +1,736 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Sillon">
+<meta name="theme-color" content="#0d1017">
+<title>Sillon</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" href="icon-192.png">
+<style>
+html { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); background: #0d1017; }
+body { margin: 0; }
+
+/* Mise en page : appli plein écran, barre d'onglets en bas, lecteur qui monte depuis le mini-lecteur. */
+:root {
+  --bg: #0d1017; --bg2: #151a24; --bg3: #1e2430;
+  --fg: #f2f4f8; --muted: #8d97a8;
+  --accent: #ff7a45; --accent-ink: #1a0d06;
+  --line: rgba(255, 255, 255, .09);
+  --tab-h: 58px;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { height: 100%; background: var(--bg); color: var(--fg); overscroll-behavior: none; }
+body { font: 15px/1.4 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif; -webkit-font-smoothing: antialiased; }
+button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
+button:focus-visible, input:focus-visible, a:focus-visible, label:focus-within { outline: 2px solid var(--accent); outline-offset: 2px; }
+h1, h2, h3, p { margin: 0; }
+h1, h2 { letter-spacing: -.02em; text-wrap: balance; }
+svg { display: block; fill: currentColor; }
+
+#app { display: flex; flex-direction: column; height: 100%; }
+#main { position: relative; flex: 1; min-height: 0; }
+.view { position: absolute; inset: 0; overflow-y: auto; overflow-x: hidden; padding-bottom: 24px; display: none; }
+.view.on { display: block; }
+.top { padding: 18px 16px 8px; }
+.top h1 { font-size: 28px; font-weight: 800; }
+.sub { margin-top: 4px; color: var(--muted); font-size: 13px; }
+.section-h { padding: 18px 16px 6px; font-size: 18px; font-weight: 700; }
+
+.cv { position: relative; display: block; overflow: hidden; background: linear-gradient(135deg, hsl(var(--h) 45% 36%), hsl(calc(var(--h) + 40) 50% 18%)); }
+.cv span { position: absolute; inset: 0; display: grid; place-items: center; font-weight: 800; font-size: 1.6em; color: rgba(255, 255, 255, .85); }
+
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 48px; padding: 0 20px; border-radius: 24px; background: var(--bg3); font-weight: 700; font-size: 15px; text-decoration: none; color: var(--fg); }
+.btn svg { width: 22px; height: 22px; }
+.btn.accent { background: var(--accent); color: var(--accent-ink); }
+.pick { position: relative; overflow: hidden; }
+.pick input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; font-size: 0; }
+
+/* Accueil */
+.hero { margin: 8px 16px 4px; padding: 20px; border-radius: 16px; background: linear-gradient(140deg, #3a2018, #1b1f2b 70%); display: flex; flex-direction: column; gap: 14px; }
+.hero h2 { font-size: 20px; font-weight: 800; }
+.hero p { color: #c3c9d4; font-size: 14px; max-width: 46ch; }
+.steps { list-style: none; margin: 0; padding: 0 16px; display: grid; gap: 10px; }
+.src { display: flex; align-items: center; gap: 12px; padding: 14px; border-radius: 12px; background: var(--bg2); text-decoration: none; color: var(--fg); min-height: 64px; }
+.src .cv { flex: none; width: 44px; height: 44px; border-radius: 8px; font-size: 14px; }
+.src-t { flex: 1; min-width: 0; }
+.src-t b { display: block; font-size: 15px; }
+.src-t small { display: block; color: var(--muted); font-size: 12px; }
+.src svg { flex: none; width: 20px; height: 20px; color: var(--muted); }
+.howto { margin: 4px 16px 0; padding: 14px 16px; border-radius: 12px; background: var(--bg2); color: #c3c9d4; font-size: 13px; }
+.howto ol { margin: 6px 0 0; padding-left: 20px; display: grid; gap: 4px; }
+
+.grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 14px; padding: 6px 16px 8px; }
+@media (min-width: 560px) { .grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+.card { text-align: left; min-width: 0; }
+.card .cv { width: 100%; aspect-ratio: 1; border-radius: 8px; font-size: 2.4em; }
+.card b { display: block; margin-top: 8px; font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.card small { display: block; color: var(--muted); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Recherche */
+.searchbar { display: flex; align-items: center; gap: 10px; margin: 8px 16px 8px; padding: 0 14px; height: 46px; border-radius: 10px; background: var(--fg); color: #20242c; }
+.searchbar svg { width: 22px; height: 22px; flex: none; }
+.searchbar input { flex: 1; min-width: 0; height: 100%; border: 0; background: none; font: inherit; font-size: 16px; color: #20242c; outline: none; -webkit-appearance: none; }
+
+/* Listes */
+.list { list-style: none; margin: 0; padding: 0; }
+.trk { display: flex; align-items: center; gap: 12px; padding: 8px 8px 8px 16px; min-height: 64px; cursor: pointer; }
+.trk:active { background: var(--bg2); }
+.trk .cv { flex: none; width: 48px; height: 48px; border-radius: 6px; font-size: 1.1em; }
+.trk-txt { flex: 1; min-width: 0; }
+.trk-txt b { display: block; font-weight: 600; font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.trk-txt small { display: flex; align-items: center; gap: 6px; margin-top: 2px; color: var(--muted); font-size: 12px; overflow: hidden; white-space: nowrap; }
+.trk.now b { color: var(--accent); }
+.badge { display: inline-block; padding: 1px 6px; border-radius: 4px; border: 1px solid var(--line); color: var(--muted); font-size: 10px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; white-space: nowrap; }
+.badge.ll { color: var(--accent); border-color: rgba(255, 122, 69, .55); }
+.icon { display: grid; place-items: center; flex: none; width: 44px; height: 44px; border-radius: 50%; color: var(--fg); }
+.icon svg { width: 24px; height: 24px; }
+.icon.lg svg { width: 32px; height: 32px; }
+.icon.on { color: var(--accent); }
+.icon.mute { color: var(--muted); }
+.actions { display: flex; align-items: center; gap: 12px; padding: 8px 16px 8px; flex-wrap: wrap; }
+.btn-play { flex: none; display: grid; place-items: center; width: 56px; height: 56px; border-radius: 50%; background: var(--accent); color: var(--accent-ink); }
+.btn-play svg { width: 28px; height: 28px; }
+.empty { padding: 44px 28px; text-align: center; color: var(--muted); display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.empty b { color: var(--fg); font-size: 17px; }
+.empty .btn { margin-top: 14px; }
+.drop-note { padding: 0 16px; color: var(--muted); font-size: 12px; }
+
+/* Mini-lecteur */
+#mini { position: relative; display: flex; align-items: center; gap: 4px; margin: 0 8px 6px; padding: 6px; border-radius: 10px; background: var(--bg3); box-shadow: 0 -4px 20px rgba(0, 0, 0, .35); }
+.mini-main { flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; text-align: left; }
+.mini-main .cv { flex: none; width: 44px; height: 44px; border-radius: 6px; font-size: 1em; }
+.mini-txt { min-width: 0; }
+.mini-txt b { display: block; font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mini-txt small { display: block; color: var(--muted); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mini-bar { position: absolute; left: 10px; right: 10px; bottom: 0; height: 2px; background: var(--line); border-radius: 2px; overflow: hidden; }
+.mini-bar i { display: block; height: 100%; width: 0; background: var(--fg); }
+
+#tabs { display: flex; background: var(--bg); border-top: 1px solid var(--line); }
+.tab { flex: 1; height: var(--tab-h); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; color: var(--muted); }
+.tab svg { width: 24px; height: 24px; }
+.tab small { font-size: 10px; font-weight: 600; }
+.tab.on { color: var(--fg); }
+
+/* Lecteur plein écran */
+#np { position: fixed; inset: 0; z-index: 20; display: flex; flex-direction: column; padding: calc(env(safe-area-inset-top, 0px) + 8px) 24px calc(env(safe-area-inset-bottom, 0px) + 20px); background: linear-gradient(to bottom, hsl(var(--h, 20) 35% 22%), var(--bg) 70%); transform: translateY(100%); visibility: hidden; transition: transform .32s cubic-bezier(.2, .8, .2, 1), visibility 0s .32s; overflow: hidden; }
+#np.open { transform: none; visibility: visible; transition: transform .32s cubic-bezier(.2, .8, .2, 1); }
+.np-top { display: flex; align-items: center; justify-content: space-between; font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.np-top .sp { width: 44px; }
+.np-cv { flex: 1; min-height: 0; display: grid; place-items: center; padding: 16px 0; }
+.np-cv .cv { width: min(100%, 50dvh, 380px); aspect-ratio: 1; border-radius: 10px; box-shadow: 0 24px 60px rgba(0, 0, 0, .55); font-size: 4em; }
+.np-meta { display: flex; align-items: center; gap: 12px; }
+.np-txt { flex: 1; min-width: 0; }
+.np-txt b { display: block; font-size: 20px; font-weight: 800; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.np-txt small { display: block; color: var(--muted); font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#np-seek { width: 100%; margin: 18px 0 0; height: 28px; -webkit-appearance: none; appearance: none; background: none; }
+#np-seek::-webkit-slider-runnable-track { height: 4px; border-radius: 2px; background: linear-gradient(to right, var(--fg) var(--p, 0%), rgba(255, 255, 255, .22) var(--p, 0%)); }
+#np-seek::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; margin-top: -5px; border-radius: 50%; background: var(--fg); }
+#np-seek::-moz-range-track { height: 4px; border-radius: 2px; background: rgba(255, 255, 255, .22); }
+#np-seek::-moz-range-progress { height: 4px; border-radius: 2px; background: var(--fg); }
+#np-seek::-moz-range-thumb { width: 14px; height: 14px; border: 0; border-radius: 50%; background: var(--fg); }
+.np-times { display: flex; justify-content: space-between; color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+.np-ctl { display: flex; align-items: center; justify-content: space-between; margin-top: 8px; }
+.np-ctl .big { display: grid; place-items: center; width: 68px; height: 68px; border-radius: 50%; background: var(--fg); color: #0d1017; }
+.np-ctl .big svg { width: 34px; height: 34px; }
+
+#toast { position: fixed; left: 50%; bottom: calc(env(safe-area-inset-bottom, 0px) + var(--tab-h) + 80px); z-index: 30; max-width: calc(100% - 32px); transform: translate(-50%, 12px); padding: 10px 16px; border-radius: 10px; background: var(--fg); color: #0d1017; font-size: 14px; font-weight: 600; opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s; }
+#toast.on { opacity: 1; transform: translate(-50%, 0); }
+.sec { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; padding-right: 16px; }
+.sec .section-h { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.btn-sm { flex: none; min-height: 36px; padding: 0 14px; border-radius: 18px; background: var(--bg3); font-size: 13px; font-weight: 600; }
+.vh { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+.cv img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+#qs { position: fixed; left: 0; right: 0; bottom: 0; z-index: 25; height: 72%; display: flex; flex-direction: column; padding-bottom: env(safe-area-inset-bottom, 0px); background: var(--bg2); border-radius: 16px 16px 0 0; box-shadow: 0 -10px 40px rgba(0, 0, 0, .6); transform: translateY(100%); visibility: hidden; transition: transform .3s, visibility 0s .3s; }
+#qs.open { transform: none; visibility: visible; transition: transform .3s; }
+.qs-head { display: flex; align-items: center; justify-content: space-between; padding: 8px 8px 8px 20px; font-size: 16px; }
+#qs-list { flex: 1; overflow-y: auto; }
+@media (prefers-reduced-motion: reduce) { #np, #np.open, #toast, #qs, #qs.open { transition: none; } }
+
+</style>
+</head>
+<body>
+
+
+<div id="app">
+  <main id="main">
+    <section class="view on" id="v-home">
+      <header class="top"><h1 id="greet">Bonsoir</h1></header>
+      <div class="hero">
+        <h2 id="hero-t">Ta musique, sans connexion</h2>
+        <p id="hero-p">Ajoute des fichiers depuis ton iPhone (FLAC, WAV, MP3, M4A, MP4). Sélectionne l'image de pochette en même temps que les titres d'un album (un album à la fois). La pochette intégrée aux fichiers est lue automatiquement. Ils restent dans l'appli et se lisent partout, sans réseau, sans abonnement.</p>
+        <label class="btn accent pick"><span data-ic="plus"></span>Ajouter de la musique<input type="file" id="pick-home" multiple></label>
+      </div>
+      <div id="recent"></div>
+      <h2 class="section-h">Où trouver de la musique libre</h2>
+      <ul class="steps" id="sources"></ul>
+      <div class="howto"><b>Pour garder la meilleure qualité</b>
+        <ol>
+          <li>Ouvre un site ci-dessus et choisis le format <b>FLAC</b> (sans perte) quand il existe.</li>
+          <li>Télécharge le fichier : il arrive dans l'appli Fichiers de l'iPhone.</li>
+          <li>Reviens ici, touche <b>Ajouter de la musique</b> et choisis-le. Il est copié tel quel, sans conversion.</li>
+        </ol>
+      </div>
+    </section>
+
+    <section class="view" id="v-search">
+      <header class="top"><h1>Rechercher</h1></header>
+      <div class="searchbar"><span data-ic="search"></span>
+        <input id="q" type="search" placeholder="Titres, artistes" enterkeyhint="search" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Rechercher dans ta bibliothèque"></div>
+      <div id="search-body"></div>
+    </section>
+
+    <section class="view" id="v-lib">
+      <header class="top"><h1>Bibliothèque</h1><p id="lib-info" class="sub"></p></header>
+      <div id="lib-body"></div>
+    </section>
+  </main>
+
+  <div id="mini" hidden>
+    <div class="mini-bar"><i id="mini-prog"></i></div>
+    <button class="mini-main" id="mini-open" aria-label="Ouvrir le lecteur"><span id="mini-cv"></span><span class="mini-txt"><b id="mini-title"></b><small id="mini-artist"></small></span></button>
+    <button class="icon" id="mini-play" aria-label="Lecture ou pause"></button>
+    <button class="icon" id="mini-next" aria-label="Suivant" data-ic="next"></button>
+  </div>
+
+  <nav id="tabs">
+    <button class="tab on" data-tab="home"><span data-ic="home"></span><small>Accueil</small></button>
+    <button class="tab" data-tab="search"><span data-ic="search"></span><small>Recherche</small></button>
+    <button class="tab" data-tab="lib"><span data-ic="lib"></span><small>Bibliothèque</small></button>
+  </nav>
+</div>
+
+<div id="np" aria-hidden="true">
+  <div class="np-top"><button class="icon" id="np-close" aria-label="Fermer le lecteur" data-ic="chev"></button><span>Lecture en cours</span><button class="icon" id="np-q" aria-label="File d'attente" data-ic="queue"></button></div>
+  <div class="np-cv" id="np-cv"></div>
+  <div class="np-meta"><div class="np-txt"><b id="np-title"></b><small id="np-artist"></small></div><span class="badge" id="np-fmt"></span></div>
+  <input type="range" id="np-seek" min="0" max="1000" value="0" aria-label="Position dans le titre">
+  <div class="np-times"><span id="np-cur">0:00</span><span id="np-dur">0:00</span></div>
+  <div class="np-ctl">
+    <button class="icon" id="np-shuf" aria-label="Lecture aléatoire" data-ic="shuffle"></button>
+    <button class="icon lg" id="np-prev" aria-label="Précédent" data-ic="prev"></button>
+    <button class="big" id="np-play" aria-label="Lecture ou pause"></button>
+    <button class="icon lg" id="np-next" aria-label="Suivant" data-ic="next"></button>
+    <button class="icon" id="np-rep" aria-label="Répéter" data-ic="repeat"></button>
+  </div>
+</div>
+<input type="file" id="cover-in" accept="image/*" class="vh" tabindex="-1" aria-hidden="true">
+<div id="qs" aria-hidden="true"><div class="qs-head"><b>File d'attente</b><button class="icon" id="qs-close" aria-label="Fermer la file d'attente" data-ic="chev"></button></div><ul class="list" id="qs-list"></ul></div>
+<div id="toast" role="status"></div>
+
+
+<script>
+'use strict';
+var IC = {
+  home: '<svg viewBox="0 0 24 24"><path d="M12 3 3 10.5V21h6.5v-6h5v6H21V10.5z"/></svg>',
+  search: '<svg viewBox="0 0 24 24"><path d="M10.5 3a7.5 7.5 0 0 1 5.9 12.1l4.3 4.3-1.4 1.4-4.3-4.3A7.5 7.5 0 1 1 10.5 3zm0 2a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11z"/></svg>',
+  lib: '<svg viewBox="0 0 24 24"><path d="M4 3h2v18H4zm5 0h2v18H9zm5.3.6 1.9-.5 4.2 17.3-1.9.5z"/></svg>',
+  play: '<svg viewBox="0 0 24 24"><path d="M7 4.5v15l13-7.5z"/></svg>',
+  pause: '<svg viewBox="0 0 24 24"><path d="M6 4h4v16H6zm8 0h4v16h-4z"/></svg>',
+  next: '<svg viewBox="0 0 24 24"><path d="M6 5v14l10-7zm11 0h2v14h-2z"/></svg>',
+  prev: '<svg viewBox="0 0 24 24"><path d="M18 5v14L8 12zM5 5h2v14H5z"/></svg>',
+  shuffle: '<svg viewBox="0 0 24 24"><path d="M17 3h4v4l-1.5-1.5-4.2 4.2-1.4-1.4 4.2-4.2zM3 6h4.6l9.9 12H21v2h-4.6L6.5 8H3zm11.4 6.6 1.4 1.4-2.3 2.3 1.5 1.7H17l-1.2 1.2L17 21h4v-4l-1.5 1.5-1.7-1.7z"/></svg>',
+  repeat: '<svg viewBox="0 0 24 24"><path d="M7 7h10v3l4-4-4-4v3H5v6h2zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2z"/></svg>',
+  chev: '<svg viewBox="0 0 24 24"><path d="m5.6 8.3 1.4-1.4 5 5 5-5 1.4 1.4-6.4 6.4z"/></svg>',
+  plus: '<svg viewBox="0 0 24 24"><path d="M11 4h2v7h7v2h-7v7h-2v-7H4v-2h7z"/></svg>',
+  queue: '<svg viewBox="0 0 24 24"><path d="M3 5h18v2H3zm0 6h18v2H3zm0 6h10v2H3zm13-1v-0.01L21 19l-5 3z"/></svg>',
+  trash: '<svg viewBox="0 0 24 24"><path d="M9 3h6l1 2h4v2H4V5h4zM6 9h12l-1 12H7z"/></svg>',
+  out: '<svg viewBox="0 0 24 24"><path d="M14 3h7v7h-2V6.4l-8.3 8.3-1.4-1.4L17.6 5H14zM5 7h6v2H6v9h9v-5h2v7H4V7z"/></svg>'
+};
+function $(s, r) { return (r || document).querySelector(s); }
+function $$(s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); }
+function esc(t) { return String(t == null ? '' : t).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+function hue(s) { var h = 0; String(s).split('').forEach(function (c) { h = (h * 31 + c.charCodeAt(0)) % 360; }); return h; }
+function fmtTime(t) { return isFinite(t) && t > 0 ? Math.floor(t / 60) + ':' + String(Math.floor(t % 60)).padStart(2, '0') : '0:00'; }
+function fmtMB(b) { return (b / 1048576).toFixed(b > 1e8 ? 0 : 1) + ' Mo'; }
+function paintIcons() { $$('[data-ic]').forEach(function (el) { el.innerHTML = IC[el.dataset.ic] || ''; }); }
+function toast(m) { var t = $('#toast'); t.textContent = m; t.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(function () { t.classList.remove('on'); }, 2800); }
+
+/* ---------- Stockage : IndexedDB, avec repli en mémoire si le navigateur le refuse ---------- */
+var DB = {
+  db: null, mem: new Map(),
+  open: function () {
+    return new Promise(function (ok) {
+      try {
+        var r = indexedDB.open('sillon-local', 1);
+        r.onupgradeneeded = function () { r.result.createObjectStore('tracks', { keyPath: 'id' }); r.result.createObjectStore('blobs'); };
+        r.onsuccess = function () { DB.db = r.result; ok(true); };
+        r.onerror = function () { ok(false); };
+      } catch (e) { ok(false); }
+    });
+  },
+  tx: function (store, mode, fn) {
+    return new Promise(function (ok, ko) {
+      var t = DB.db.transaction(store, mode), req = fn(t.objectStore(store));
+      t.oncomplete = function () { ok(req && req.result); }; t.onerror = t.onabort = function () { ko(t.error); };
+    });
+  },
+  all: function () { return DB.db ? DB.tx('tracks', 'readonly', function (s) { return s.getAll(); }) : Promise.resolve([]); },
+  getBlob: function (id) { return DB.db ? DB.tx('blobs', 'readonly', function (s) { return s.get(id); }) : Promise.resolve(DB.mem.get(id)); },
+  putMeta: function (meta) {
+    if (!DB.db) return Promise.resolve();
+    return DB.tx('tracks', 'readwrite', function (s) { return s.put(meta); });
+  },
+  put: function (meta, blob) {
+    if (!DB.db) { DB.mem.set(meta.id, blob); return Promise.resolve(); }
+    return DB.tx('blobs', 'readwrite', function (s) { return s.put(blob, meta.id); }).then(function () { return DB.tx('tracks', 'readwrite', function (s) { return s.put(meta); }); });
+  },
+  del: function (id) {
+    if (!DB.db) { DB.mem.delete(id); return Promise.resolve(); }
+    return DB.tx('blobs', 'readwrite', function (s) { return s.delete(id); }).then(function () { return DB.tx('tracks', 'readwrite', function (s) { return s.delete(id); }); });
+  }
+};
+
+var state = { lib: new Map(), queue: [], idx: -1, shuffle: false, repeat: 0 };
+var SOURCES = [
+  { n: 'Internet Archive', d: 'Des millions d\'enregistrements, souvent en FLAC', u: 'https://archive.org/details/audio', c: 'IA' },
+  { n: 'Free Music Archive', d: 'Albums sous licence Creative Commons', u: 'https://freemusicarchive.org', c: 'FM' },
+  { n: 'Jamendo', d: 'Artistes indépendants, téléchargement gratuit', u: 'https://www.jamendo.com', c: 'JA' },
+  { n: 'Musopen', d: 'Classique du domaine public, haute qualité', u: 'https://musopen.org', c: 'MU' }
+];
+
+/* ---------- Lecture des fichiers ajoutés ---------- */
+var FORMATS = { flac: 'FLAC', wav: 'WAV', wave: 'WAV', aif: 'AIFF', aiff: 'AIFF', m4a: 'M4A', mp3: 'MP3', ogg: 'OGG', opus: 'OPUS', aac: 'AAC', caf: 'CAF', mp4: 'MP4', m4v: 'MP4', mov: 'MOV', webm: 'WEBM', '3gp': '3GP', mka: 'MKA', wma: 'WMA' };
+function extOf(n) { var m = /\.([a-z0-9]+)$/i.exec(n); return m ? m[1].toLowerCase() : ''; }
+function parseName(name) {
+  var base = name.replace(/\.[^.]+$/, '').replace(/_/g, ' ').trim();
+  base = base.replace(/^\d{1,3}\s*[-.)]\s*/, '');
+  var i = base.indexOf(' - ');
+  if (i > 0) return { artist: base.slice(0, i).trim(), title: base.slice(i + 3).trim() };
+  return { artist: 'Artiste inconnu', title: base || name };
+}
+function readDuration(blob) {
+  return new Promise(function (ok) {
+    var a = new Audio(), u = URL.createObjectURL(blob), done = false;
+    function end(v) { if (done) return; done = true; URL.revokeObjectURL(u); ok(v); }
+    a.preload = 'metadata'; a.onloadedmetadata = function () { end(isFinite(a.duration) ? a.duration : 0); }; a.onerror = function () { end(0); };
+    setTimeout(function () { end(0); }, 4000); a.src = u;
+  });
+}
+/* ---------- Pochettes : image sélectionnée avec les titres, ou image intégrée au fichier ---------- */
+var IMG_EXT = { jpg: 1, jpeg: 1, png: 1, webp: 1, heic: 1, heif: 1, gif: 1 };
+function isImage(f) { return /^image\//.test(f.type) || !!IMG_EXT[extOf(f.name)]; }
+function pickCover(imgs) {
+  if (!imgs.length) return null;
+  return imgs.find(function (f) { return /cover|folder|front|album|pochette/i.test(f.name); }) || imgs[0];
+}
+function sniff(u8, i) {
+  if (u8[i] === 0xFF && u8[i + 1] === 0xD8 && u8[i + 2] === 0xFF) return 'image/jpeg';
+  if (u8[i] === 0x89 && u8[i + 1] === 0x50 && u8[i + 2] === 0x4E && u8[i + 3] === 0x47) return 'image/png';
+  return null;
+}
+function find(u8, str, from, to) {
+  var n = str.length, end = Math.min(to || u8.length, u8.length) - n;
+  for (var i = from || 0; i <= end; i++) { var k = 0; while (k < n && u8[i + k] === str.charCodeAt(k)) k++; if (k === n) return i; }
+  return -1;
+}
+function u32(u8, q) { return (u8[q] * 16777216) + (u8[q + 1] << 16) + (u8[q + 2] << 8) + u8[q + 3]; }
+async function embeddedCover(f) {
+  try {
+    var u8 = new Uint8Array(await f.slice(0, 6 * 1024 * 1024).arrayBuffer());
+    var s4 = String.fromCharCode(u8[0], u8[1], u8[2], u8[3]);
+    if (s4.slice(0, 3) === 'ID3') {
+      var tag = ((u8[6] & 127) << 21) | ((u8[7] & 127) << 14) | ((u8[8] & 127) << 7) | (u8[9] & 127);
+      var a = find(u8, 'APIC', 10, 10 + tag);
+      if (a < 0) return null;
+      var sz = u8[3] === 4 ? ((u8[a + 4] & 127) << 21) | ((u8[a + 5] & 127) << 14) | ((u8[a + 6] & 127) << 7) | (u8[a + 7] & 127) : u32(u8, a + 4);
+      for (var i = a + 10; i < a + 10 + Math.min(sz, 400); i++) { var t = sniff(u8, i); if (t) return new Blob([u8.slice(i, a + 10 + sz)], { type: t }); }
+      return null;
+    }
+    if (s4 === 'fLaC') {
+      var p = 4;
+      while (p + 4 < u8.length) {
+        var hdr = u8[p], type = hdr & 127, len = (u8[p + 1] << 16) | (u8[p + 2] << 8) | u8[p + 3], body = p + 4;
+        if (type === 6) {
+          var q = body + 4; q += 4 + u32(u8, q); q += 4 + u32(u8, q) + 16;
+          var il = u32(u8, q); q += 4; var t2 = sniff(u8, q);
+          return t2 ? new Blob([u8.slice(q, q + il)], { type: t2 }) : null;
+        }
+        if (hdr & 128) break; p = body + len;
+      }
+      return null;
+    }
+    var c = find(u8, 'covr');
+    if (c >= 4) {
+      var d = find(u8, 'data', c, c + 64);
+      if (d >= 0) { var st = d + 12, t3 = sniff(u8, st); if (t3) return new Blob([u8.slice(st, c - 4 + u32(u8, c - 4))], { type: t3 }); }
+    }
+  } catch (e) {}
+  return null;
+}
+
+/* Pochette tirée d'une image de la vidéo (MP4, MOV, WEBM) */
+function isVideo(f) { return /^video\//.test(f.type) || /^(mp4|m4v|mov|webm|3gp)$/.test(extOf(f.name)); }
+function videoThumb(blob) {
+  return new Promise(function (ok) {
+    var v = document.createElement('video'), u = URL.createObjectURL(blob), done = false;
+    function end(b) { if (done) return; done = true; URL.revokeObjectURL(u); ok(b); }
+    v.muted = true; v.preload = 'auto'; v.setAttribute('playsinline', '');
+    v.onloadedmetadata = function () { try { v.currentTime = Math.min(1, (v.duration || 2) / 4); } catch (e) { end(null); } };
+    v.onseeked = function () {
+      try {
+        var w = v.videoWidth, h = v.videoHeight; if (!w || !h) return end(null);
+        var s = Math.min(1, 640 / Math.max(w, h)), c = document.createElement('canvas');
+        c.width = Math.round(w * s); c.height = Math.round(h * s);
+        c.getContext('2d').drawImage(v, 0, 0, c.width, c.height);
+        c.toBlob(function (b) { end(b); }, 'image/jpeg', 0.82);
+      } catch (e) { end(null); }
+    };
+    v.onerror = function () { end(null); };
+    setTimeout(function () { end(null); }, 8000);
+    v.src = u;
+  });
+}
+async function backfillCovers() {
+  var todo = Array.from(state.lib.values()).filter(function (t) { return !t.cover && !t.noCover && /^(MP4|MOV|WEBM|3GP)$/.test(t.format); });
+  for (var i = 0; i < todo.length; i++) {
+    var t = todo[i], b = null, c = null;
+    try { b = await DB.getBlob(t.id); c = b ? await videoThumb(b) : null; } catch (e) {}
+    if (c) t.cover = c; else t.noCover = true;
+    try { await DB.putMeta(t); } catch (e) {}
+    if (c) { renderAll(); if (cur()) updateNow(); cloudEnqueue(t, null); }
+  }
+}
+
+async function importFiles(files) {
+  var all = Array.prototype.slice.call(files || []);
+  var imgs = all.filter(isImage);
+  var batchCover = pickCover(imgs);
+  var list = all.filter(function (f) { return !isImage(f) && (/^(audio|video)\//.test(f.type) || FORMATS[extOf(f.name)]); });
+  if (!list.length) { toast('Fichier non reconnu. Formats : MP3, M4A, FLAC, WAV, MP4…'); return; }
+  var added = 0, skipped = 0;
+  for (var i = 0; i < list.length; i++) {
+    var f = list[i], id = f.name + '|' + f.size + '|' + f.lastModified;
+    if (state.lib.has(id)) { skipped++; continue; }
+    toast('Ajout ' + (i + 1) + ' sur ' + list.length + '…');
+    try {
+      var p = parseName(f.name), ext = extOf(f.name);
+      var meta = { id: id, title: p.title, artist: p.artist, format: FORMATS[ext] || (ext || 'AUDIO').toUpperCase(), size: f.size, len: await readDuration(f), at: Date.now() + i };
+      meta.cover = (await embeddedCover(f)) || batchCover || (isVideo(f) ? await videoThumb(f) : null);
+      await DB.put(meta, f); state.lib.set(id, meta); added++;
+      cloudEnqueue(meta, f);
+    } catch (e) { toast('Espace insuffisant ou fichier refusé : ' + f.name); break; }
+  }
+  renderAll();
+  if (added) toast(added + ' titre' + (added > 1 ? 's ajoutés' : ' ajouté') + (skipped ? ' · ' + skipped + ' déjà présent' + (skipped > 1 ? 's' : '') : ''));
+  else if (skipped) toast('Déjà dans ta bibliothèque');
+}
+async function removeTrack(id) {
+  if (cur() && cur().id === id) { audio.pause(); audio.removeAttribute('src'); state.queue = []; state.idx = -1; updateNow(); }
+  var gone = state.lib.get(id); await DB.del(id); state.lib.delete(id); cloudRemove(gone); renderAll(); toast('Titre supprimé de l\'appli');
+}
+
+/* ---------- Rendu ---------- */
+function sorted() { return Array.from(state.lib.values()).sort(function (a, b) { return a.artist.localeCompare(b.artist) || a.title.localeCompare(b.title, undefined, { numeric: true }); }); }
+function recent() { return Array.from(state.lib.values()).sort(function (a, b) { return b.at - a.at; }); }
+var coverUrls = {};
+function coverUrl(t) {
+  if (!t.cover) return t.cid ? '/_blob/' + t.cid : '';
+  if (!coverUrls[t.id]) { try { coverUrls[t.id] = URL.createObjectURL(t.cover); } catch (e) { return ''; } }
+  return coverUrls[t.id];
+}
+function cv(t, cls) {
+  var u = coverUrl(t);
+  return '<span class="cv ' + (cls || '') + '" style="--h:' + hue(t.artist + t.title) + '">' + (u ? '<img alt="" src="' + u + '">' : '<span>' + esc((t.title || '?').charAt(0).toUpperCase()) + '</span>') + '</span>';
+}
+function lossless(f) { return /FLAC|WAV|AIFF|ALAC/.test(f); }
+function trackRow(t, list) {
+  var now = cur() && cur().id === t.id;
+  return '<li class="trk' + (now ? ' now' : '') + '" data-play="' + esc(t.id) + '" data-in="' + list + '">' + cv(t) +
+    '<span class="trk-txt"><b>' + esc(t.title) + '</b><small><span class="badge' + (lossless(t.format) ? ' ll' : '') + '">' + esc(t.format) + '</span>' + esc(t.artist) + (t.len ? ' · ' + fmtTime(t.len) : '') + '</small></span>' +
+    '<button class="icon mute" data-rm="' + esc(t.id) + '" aria-label="Supprimer ' + esc(t.title) + '">' + IC.trash + '</button></li>';
+}
+function emptyLib() {
+  return '<div class="empty"><b>Ta bibliothèque est vide</b>Ajoute des fichiers audio depuis ton iPhone pour les écouter sans connexion.' +
+    '<label class="btn accent pick"><span>' + IC.plus + '</span>Ajouter de la musique<input type="file" class="pick-in" multiple></label></div>';
+}
+function renderHome() {
+  var h = new Date().getHours();
+  $('#greet').textContent = h < 5 || h >= 18 ? 'Bonsoir' : h < 12 ? 'Bonjour' : 'Bon après-midi';
+  $('#sources').innerHTML = SOURCES.map(function (s) {
+    return '<li><a class="src" href="' + s.u + '" target="_blank" rel="noopener"><span class="cv" style="--h:' + hue(s.n) + '"><span>' + s.c + '</span></span><span class="src-t"><b>' + esc(s.n) + '</b><small>' + esc(s.d) + '</small></span>' + IC.out + '</a></li>';
+  }).join('');
+  var r = recent().slice(0, 6);
+  $('#recent').innerHTML = r.length ? '<h2 class="section-h">Ajoutés récemment</h2><div class="grid">' + r.map(function (t) {
+    return '<button class="card" data-play="' + esc(t.id) + '" data-in="recent">' + cv(t) + '<b>' + esc(t.title) + '</b><small>' + esc(t.artist) + '</small></button>';
+  }).join('') + '</div>' : '';
+  $('#hero-t').textContent = state.lib.size ? 'Ajouter encore de la musique' : 'Ta musique, sans connexion';
+}
+function renderLib() {
+  var items = sorted(), total = items.reduce(function (s, t) { return s + (t.size || 0); }, 0);
+  $('#lib-info').textContent = items.length ? items.length + ' titre' + (items.length > 1 ? 's' : '') + ' · ' + fmtMB(total) + ' sur cet appareil' + cloudLine(items) : '';
+  if (!items.length) { $('#lib-body').innerHTML = emptyLib(); bindPickers(); return; }
+  var html = '<div class="actions"><button class="btn-play" data-playlib="1" aria-label="Tout lire">' + IC.play + '</button>' +
+    '<button class="btn" data-playlib="shuffle">' + IC.shuffle + 'Aléatoire</button>' +
+    '<label class="btn pick">' + IC.plus + 'Ajouter<input type="file" class="pick-in" multiple></label></div>';
+  var last = null;
+  items.forEach(function (t) {
+    if (t.artist !== last) { if (last !== null) html += '</ul>'; html += '<div class="sec"><h2 class="section-h">' + esc(t.artist) + '</h2><button class="btn-sm" data-cover="' + esc(t.artist) + '">Pochette</button></div><ul class="list">'; last = t.artist; }
+    html += trackRow(t, 'lib');
+  });
+  $('#lib-body').innerHTML = html + '</ul>'; bindPickers();
+}
+function renderSearch() {
+  var q = $('#q').value.trim().toLowerCase(), box = $('#search-body');
+  if (!state.lib.size) { box.innerHTML = '<div class="empty"><b>Rien à chercher pour l\'instant</b>Ajoute d\'abord de la musique dans ta bibliothèque.</div>'; return; }
+  if (!q) { box.innerHTML = '<div class="empty"><b>Cherche dans ta bibliothèque</b>Tape un titre ou le nom d\'un artiste.</div>'; return; }
+  var res = sorted().filter(function (t) { return (t.title + ' ' + t.artist).toLowerCase().indexOf(q) >= 0; });
+  box.innerHTML = res.length ? '<ul class="list">' + res.map(function (t) { return trackRow(t, 'search'); }).join('') + '</ul>' : '<div class="empty"><b>Aucun résultat</b>Rien ne correspond à « ' + esc($('#q').value.trim()) + ' ».</div>';
+}
+function renderAll() { renderHome(); renderLib(); renderSearch(); }
+
+/* ---------- Lecteur ---------- */
+var audio = new Audio(); audio.preload = 'auto';
+var objUrl = null;
+function cur() { return state.queue[state.idx]; }
+async function startTrack(i) {
+  if (i < 0 || i >= state.queue.length) return;
+  state.idx = i; var t = cur();
+  var blob = await DB.getBlob(t.id);
+  if (!blob) { toast('Récupération depuis la sauvegarde en ligne…'); blob = await ensureLocal(t); }
+  if (!blob) { toast('Fichier introuvable, ajoute-le à nouveau'); return; }
+  if (objUrl) URL.revokeObjectURL(objUrl);
+  objUrl = URL.createObjectURL(blob); audio.src = objUrl;
+  try { await audio.play(); } catch (e) { toast('Lecture impossible pour ce fichier'); }
+  updateNow(); renderLib(); renderSearch(); renderQueue();
+}
+function shuffled(list, first) {
+  var rest = list.filter(function (t) { return t.id !== first.id; });
+  for (var i = rest.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)), x = rest[i]; rest[i] = rest[j]; rest[j] = x; }
+  return [first].concat(rest);
+}
+function playQueue(list, i) {
+  state.orig = list.slice();
+  if (state.shuffle) { state.queue = shuffled(list, list[i]); startTrack(0); } else { state.queue = list.slice(); startTrack(i); }
+}
+function setShuffle(on) {
+  state.shuffle = on; syncToggles();
+  var t = cur(); if (!t || !state.orig) return;
+  state.queue = on ? shuffled(state.orig, t) : state.orig.slice();
+  state.idx = state.queue.findIndex(function (x) { return x.id === t.id; });
+  renderQueue();
+}
+function renderQueue() {
+  var box = $('#qs-list'); if (!box) return;
+  box.innerHTML = state.queue.map(function (t, i) {
+    var off = i - state.idx;
+    return '<li class="trk' + (off === 0 ? ' now' : '') + '" data-jump="' + i + '">' + cv(t) + '<span class="trk-txt"><b>' + esc(t.title) + '</b><small>' + esc(t.artist) + '</small></span><span class="badge">' + (off === 0 ? 'En cours' : off > 0 ? '+' + off : off) + '</span></li>';
+  }).join('');
+}
+function setQs(open) {
+  $('#qs').classList.toggle('open', open); $('#qs').setAttribute('aria-hidden', String(!open));
+  if (open) { renderQueue(); var n = $('#qs-list .now'); if (n && n.scrollIntoView) n.scrollIntoView({ block: 'center' }); }
+}
+function next(auto) {
+  if (!state.queue.length) return;
+  if (auto && state.repeat === 2) { audio.currentTime = 0; audio.play(); return; }
+  var n = state.idx + 1;
+  if (n >= state.queue.length) { if (state.repeat === 1 || !auto) n = 0; else { audio.pause(); return; } }
+  startTrack(n);
+}
+function prev() { if (audio.currentTime > 3) { audio.currentTime = 0; return; } startTrack(state.idx > 0 ? state.idx - 1 : 0); }
+function toggle() { if (!cur()) return; if (audio.paused) audio.play(); else audio.pause(); }
+function updateNow() {
+  var t = cur(); $('#mini').hidden = !t; if (!t) { setNp(false); return; }
+  $('#mini-title').textContent = t.title; $('#mini-artist').textContent = t.artist; $('#mini-cv').innerHTML = cv(t);
+  $('#np-title').textContent = t.title; $('#np-artist').textContent = t.artist; $('#np-cv').innerHTML = cv(t); $('#np').style.setProperty('--h', hue(t.artist + t.title));
+  var f = $('#np-fmt'); f.textContent = t.format; f.className = 'badge' + (lossless(t.format) ? ' ll' : '');
+  if ('mediaSession' in navigator && window.MediaMetadata) navigator.mediaSession.metadata = new MediaMetadata({ title: t.title, artist: t.artist, artwork: coverUrl(t) ? [{ src: coverUrl(t), sizes: '512x512', type: (t.cover && t.cover.type) || 'image/jpeg' }] : [] });
+}
+function updatePlayIcons() {
+  var p = audio.paused; $('#mini-play').innerHTML = p ? IC.play : IC.pause; $('#np-play').innerHTML = p ? IC.play : IC.pause;
+  if ('mediaSession' in navigator) navigator.mediaSession.playbackState = p ? 'paused' : 'playing';
+}
+function updateProgress() {
+  var d = audio.duration, c = audio.currentTime, p = d ? c / d : 0, sk = $('#np-seek');
+  $('#mini-prog').style.width = p * 100 + '%';
+  if (!sk.dataset.drag) { sk.value = Math.round(p * 1000); sk.style.setProperty('--p', p * 100 + '%'); }
+  $('#np-cur').textContent = fmtTime(c); $('#np-dur').textContent = fmtTime(d);
+}
+audio.addEventListener('play', updatePlayIcons); audio.addEventListener('pause', updatePlayIcons);
+audio.addEventListener('timeupdate', updateProgress); audio.addEventListener('loadedmetadata', updateProgress);
+audio.addEventListener('ended', function () { next(true); });
+audio.addEventListener('error', function () { if (cur() && audio.src) toast('Ce format ne peut pas être lu par l\'iPhone'); });
+if ('mediaSession' in navigator) {
+  var ms = navigator.mediaSession;
+  try {
+    ms.setActionHandler('play', function () { audio.play(); }); ms.setActionHandler('pause', function () { audio.pause(); });
+    ms.setActionHandler('nexttrack', function () { next(false); }); ms.setActionHandler('previoustrack', prev);
+    ms.setActionHandler('seekto', function (e) { if (e.seekTime != null) audio.currentTime = e.seekTime; });
+  } catch (e) {}
+}
+var seek = $('#np-seek');
+seek.addEventListener('input', function () { seek.dataset.drag = '1'; var p = seek.value / 1000; seek.style.setProperty('--p', p * 100 + '%'); $('#np-cur').textContent = fmtTime((audio.duration || 0) * p); });
+seek.addEventListener('change', function () { audio.currentTime = (audio.duration || 0) * (seek.value / 1000); delete seek.dataset.drag; });
+
+/* ---------- Navigation ---------- */
+function go(tab) {
+  $$('.view').forEach(function (v) { v.classList.toggle('on', v.id === 'v-' + tab); });
+  $$('.tab').forEach(function (b) { b.classList.toggle('on', b.dataset.tab === tab); });
+}
+function setNp(open) { var n = $('#np'); n.classList.toggle('open', open); n.setAttribute('aria-hidden', String(!open)); }
+function syncToggles() { $('#np-shuf').classList.toggle('on', state.shuffle); $('#np-rep').classList.toggle('on', state.repeat > 0); $('#np-rep').setAttribute('aria-label', ['Répéter', 'Répéter tout', 'Répéter le titre'][state.repeat]); }
+function bindPickers() { $$('.pick-in').forEach(function (i) { i.onchange = function () { importFiles(i.files).then(function () { i.value = ''; }); }; }); }
+
+document.addEventListener('click', function (e) {
+  var el = e.target.closest('[data-tab],[data-play],[data-rm],[data-playlib],[data-jump],[data-cover]'); if (!el) return; var d = el.dataset;
+  if (d.cover !== undefined) { state.coverFor = d.cover; return $('#cover-in').click(); }
+  if (d.jump != null) return startTrack(+d.jump);
+  if (d.tab) return go(d.tab);
+  if (d.rm) { e.stopPropagation(); return removeTrack(d.rm); }
+  if (d.playlib) { var all = sorted(); if (!all.length) return; state.shuffle = d.playlib === 'shuffle'; syncToggles(); return playQueue(all, state.shuffle ? Math.floor(Math.random() * all.length) : 0); }
+  if (d.play) {
+    var src = d.in === 'recent' ? recent() : sorted();
+    if (d.in === 'search') { var q = $('#q').value.trim().toLowerCase(); src = src.filter(function (t) { return (t.title + ' ' + t.artist).toLowerCase().indexOf(q) >= 0; }); }
+    return playQueue(src, src.findIndex(function (t) { return t.id === d.play; }));
+  }
+});
+$('#pick-home').addEventListener('change', function (e) { importFiles(e.target.files).then(function () { e.target.value = ''; }); });
+$('#mini-open').addEventListener('click', function () { setNp(true); });
+$('#np-close').addEventListener('click', function () { setNp(false); });
+$('#mini-play').addEventListener('click', toggle); $('#np-play').addEventListener('click', toggle);
+$('#mini-next').addEventListener('click', function () { next(false); }); $('#np-next').addEventListener('click', function () { next(false); });
+$('#np-prev').addEventListener('click', prev);
+$('#np-shuf').addEventListener('click', function () { setShuffle(!state.shuffle); });
+$('#np-q').addEventListener('click', function () { setQs(true); });
+$('#qs-close').addEventListener('click', function () { setQs(false); });
+$('#np-rep').addEventListener('click', function () { state.repeat = (state.repeat + 1) % 3; syncToggles(); });
+$('#cover-in').addEventListener('change', async function (e) {
+  var f = e.target.files && e.target.files[0]; e.target.value = ''; if (!f) return;
+  var n = 0, ts = Array.from(state.lib.values()).filter(function (t) { return t.artist === state.coverFor; });
+  for (var i = 0; i < ts.length; i++) {
+    var t = ts[i]; t.cover = f; t.noCover = false; t.cid = null;
+    if (coverUrls[t.id]) { URL.revokeObjectURL(coverUrls[t.id]); delete coverUrls[t.id]; }
+    try { await DB.putMeta(t); n++; } catch (err) {}
+  }
+  ts.forEach(function (t) { cloudEnqueue(t, null); });
+  renderAll(); if (cur()) updateNow();
+  toast(n ?'Pochette ajoutée à ' + n + ' titre' + (n > 1 ? 's' : '') : 'Impossible d\'enregistrer la pochette');
+});
+$('#q').addEventListener('input', renderSearch);
+$('#q').addEventListener('keydown', function (e) { if (e.key === 'Enter') e.target.blur(); });
+
+/* ---------- Sauvegarde en ligne (capacités assets + db) : survit si l'iPhone vide la mémoire locale ---------- */
+var Cloud = { ready: false, tried: false, uid: null, assets: null, db: null, chain: Promise.resolve(), coverIds: new Map(), warned: false };
+function hashKey(s) { var a = 5381, b = 52711; for (var i = 0; i < s.length; i++) { var c = s.charCodeAt(i); a = (a * 33) ^ c; b = (b * 31) ^ c; } return 't' + (a >>> 0).toString(36) + (b >>> 0).toString(36) + s.length.toString(36); }
+function cloudCol() { return Cloud.db.collection('data/users/' + Cloud.uid); }
+function cloudLine(items) {
+  if (!Cloud.tried) return '';
+  if (!Cloud.ready) return ' · sauvegarde en ligne indisponible';
+  return ' · ' + items.filter(function (t) { return t.aid; }).length + '/' + items.length + ' sauvegardés en ligne';
+}
+function cloudDoc(t) { return { id: t.id, title: t.title, artist: t.artist, format: t.format, size: t.size, len: t.len || 0, at: t.at, aid: t.aid || null, enc: t.enc || 'raw', ctype: t.ctype || '', cid: t.cid || null }; }
+function cloudErr(e) {
+  var c = e && e.code;
+  if ((c === 'quota_or_state' || c === 'quota_exceeded') && !Cloud.warned) { Cloud.warned = true; toast('Espace de sauvegarde en ligne plein'); }
+}
+function toB64Blob(blob) {
+  return new Promise(function (ok, ko) {
+    var r = new FileReader();
+    r.onload = function () { var s = String(r.result); ok(new Blob([s.slice(s.indexOf(',') + 1)], { type: 'text/plain' })); };
+    r.onerror = function () { ko(r.error); }; r.readAsDataURL(blob);
+  });
+}
+/* Le stockage n'accepte pas l'audio brut : MP4/M4A/WEBM passent tels quels, le reste est encodé en texte (limite ~15 Mo) */
+async function cloudUpload(t, blob) {
+  var ct = /^(MP4|M4A|M4V)$/.test(t.format) ? 'video/mp4' : t.format === 'WEBM' ? 'video/webm' : null, up = null, enc = 'raw';
+  if (ct) { if (blob.size <= 20 * 1048576) up = blob; }
+  else if (blob.size <= 15000000) { up = await toB64Blob(blob); enc = 'b64'; ct = 'text/plain'; }
+  if (!up) { t.cloudSkip = 'size'; return; }
+  var res = await Cloud.assets.upload(up, { type: ct });
+  t.aid = res.id; t.enc = enc; t.ctype = blob.type || '';
+}
+async function cloudCover(t) {
+  if (!t.cover || t.cid || !/^image\/(jpeg|png|gif|webp)$/.test(t.cover.type)) return;
+  if (Cloud.coverIds.has(t.cover)) { t.cid = Cloud.coverIds.get(t.cover); return; }
+  var res = await Cloud.assets.upload(t.cover); Cloud.coverIds.set(t.cover, res.id); t.cid = res.id;
+}
+function cloudEnqueue(t, blob) {
+  if (!Cloud.ready || !t) return;
+  Cloud.chain = Cloud.chain.then(async function () {
+    try {
+      if (!t.aid && !t.cloudSkip) { var b = blob || await DB.getBlob(t.id); if (b) await cloudUpload(t, b); }
+      try { await cloudCover(t); } catch (e) {}
+      if (t.aid) await cloudCol().doc(hashKey(t.id)).set(cloudDoc(t));
+      await DB.putMeta(t);
+    } catch (e) { cloudErr(e); }
+    renderLib();
+  });
+}
+function cloudRemove(t) {
+  if (!Cloud.ready || !t) return;
+  Cloud.chain = Cloud.chain.then(async function () {
+    try {
+      await cloudCol().doc(hashKey(t.id)).delete();
+      if (t.aid) await Cloud.assets.delete(t.aid);
+      if (t.cid && !Array.from(state.lib.values()).some(function (x) { return x.cid === t.cid; })) await Cloud.assets.delete(t.cid);
+    } catch (e) {}
+  });
+}
+async function ensureLocal(t) {
+  if (!t.aid) return null;
+  try {
+    var r = await fetch('/_blob/' + t.aid); if (!r.ok) return null;
+    var blob;
+    if (t.enc === 'b64') {
+      var bin = atob((await r.text()).replace(/\s/g, '')), u8 = new Uint8Array(bin.length);
+      for (var i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+      blob = new Blob([u8], { type: t.ctype || 'audio/mpeg' });
+    } else { blob = new Blob([await r.arrayBuffer()], { type: t.ctype || 'video/mp4' }); }
+    delete t.remote;
+    await DB.put(t, blob);
+    return blob;
+  } catch (e) { return null; }
+}
+async function cloudPull() {
+  var snap = await cloudCol().get(), n = 0;
+  snap.docs.forEach(function (d) {
+    var x = d.data(); if (!x || !x.id) return;
+    var have = state.lib.get(x.id);
+    if (have) { if (!have.aid && x.aid) { have.aid = x.aid; have.enc = x.enc; have.ctype = x.ctype; } if (!have.cid && x.cid) have.cid = x.cid; return; }
+    state.lib.set(x.id, { id: x.id, title: x.title, artist: x.artist, format: x.format, size: x.size, len: x.len, at: x.at, aid: x.aid, enc: x.enc, ctype: x.ctype, cid: x.cid, remote: true }); n++;
+  });
+  return n;
+}
+async function cloudPrefetch() {
+  var todo = Array.from(state.lib.values()).filter(function (t) { return t.remote; });
+  for (var i = 0; i < todo.length; i++) {
+    var t = todo[i];
+    if (t.cid && !t.cover) { try { var rc = await fetch('/_blob/' + t.cid); if (rc.ok) t.cover = await rc.blob(); } catch (e) {} }
+    await ensureLocal(t); renderAll();
+  }
+}
+async function cloudStart() {
+  try {
+    if (window.claude && claude.use) {
+      var u = await claude.use('user'); Cloud.uid = u ? await u.id() : null;
+      Cloud.assets = await claude.use('assets'); Cloud.db = await claude.use('db');
+      Cloud.ready = !!(Cloud.uid && Cloud.assets && Cloud.db);
+    }
+  } catch (e) {}
+  Cloud.tried = Cloud.ready;
+  if (!Cloud.ready) { renderLib(); return; }
+  try { if (await Promise.race([cloudPull(), new Promise(function (r) { setTimeout(function () { r(0); }, 12000); })])) renderAll(); } catch (e) { cloudErr(e); }
+  Array.from(state.lib.values()).forEach(function (t) { if (!t.remote && (!t.aid || (t.cover && !t.cid))) cloudEnqueue(t, null); });
+  renderLib(); cloudPrefetch();
+}
+
+(async function init() {
+  paintIcons(); updatePlayIcons(); syncToggles();
+  var ok = await DB.open();
+  if (!ok) toast('Stockage local indisponible : les titres seront perdus à la fermeture');
+  try { (await DB.all()).forEach(function (t) { state.lib.set(t.id, t); }); } catch (e) {}
+  renderAll(); if (state.lib.size) go('lib');
+  backfillCovers();
+  cloudStart();
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(function () {});
+})();
+</script>
+</body>
+</html>
